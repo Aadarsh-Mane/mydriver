@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import { google } from "googleapis";
+import NodeCache from "node-cache";
 
 const PORT = process.env.PORT || 9000; // Use PORT environment variable or default to 5000
 dotenv.config(); // Load environment variables from .env file
@@ -18,12 +19,21 @@ const auth = new google.auth.GoogleAuth({
 // const drive = google.drive({ version: "v3", auth });
 
 // Function to get all image files from a Google Drive folder
-const folderId = "1GK4GfA1ICMdO5ewtUBTgbTYnDRVHqgYu";
+// const folderId = "1GK4GfA1ICMdO5ewtUBTgbTYnDRVHqgYu";
+const cache = new NodeCache({ stdTTL: 3600 });
+const drive = google.drive({ version: "v3", auth });
+
+const folderId = "1TKlHnawAQCXydSbTEU4bVeJLiHFujjCC";
 
 app.get("/fetch-images", async (req, res) => {
   try {
-    const drive = google.drive({ version: "v3", auth });
+    // Check if the data is in the cache
+    const cachedImages = cache.get("images");
+    if (cachedImages) {
+      return res.json({ files: cachedImages });
+    }
 
+    // If not cached, fetch from Google Drive
     const response = await drive.files.list({
       q: `'${folderId}' in parents and (mimeType contains 'image/')`,
       fields: "nextPageToken, files(id, name)",
@@ -35,6 +45,13 @@ app.get("/fetch-images", async (req, res) => {
       files.forEach((file) => {
         console.log(`${file.name} (${file.id})`);
       });
+
+      // Cache the response
+      cache.set(
+        "images",
+        files.map((file) => ({ id: file.id, name: file.name }))
+      );
+
       return res.json({
         files: files.map((file) => ({ id: file.id, name: file.name })),
       });
