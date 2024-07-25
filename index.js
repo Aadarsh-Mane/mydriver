@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { google } from "googleapis";
 import NodeCache from "node-cache";
-
+// hello
 const PORT = process.env.PORT || 5000; // Use PORT environment variable or default to 5000
 dotenv.config(); // Load environment variables from .env file
 
@@ -57,7 +57,9 @@ app.get("/fetch-images", async (req, res) => {
   const folderId = req.query.folderId; // Get folderId from query parameter
 
   if (!folderId) {
-    return res.status(400).json({ message: "folderId query parameter is required" });
+    return res
+      .status(400)
+      .json({ message: "folderId query parameter is required" });
   }
 
   try {
