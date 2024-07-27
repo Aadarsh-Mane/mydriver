@@ -183,21 +183,30 @@ app.get("/fetch-images", async (req, res) => {
       files.forEach(async (file) => {
         console.log(`${file.name} (${file.id})`);
 
-        // Save each image to MongoDB
-        const newImage = new Image({
-          id: file.id,
-          name: file.name,
-          folderId: folderId,
-        });
+        // Check if the image already exists in MongoDB
+        const existingImage = await Image.findOne({ id: file.id });
 
-        try {
-          await newImage.save();
-          console.log(`Saved ${file.name} (${file.id}) to MongoDB`);
-        } catch (saveErr) {
-          console.error(
-            `Error saving ${file.name} (${file.id}) to MongoDB:`,
-            saveErr.message
+        if (existingImage) {
+          console.log(
+            `Image ${file.name} (${file.id}) already exists in MongoDB`
           );
+        } else {
+          // Save each image to MongoDB
+          const newImage = new Image({
+            id: file.id,
+            name: file.name,
+            folderId: folderId,
+          });
+
+          try {
+            await newImage.save();
+            console.log(`Saved ${file.name} (${file.id}) to MongoDB`);
+          } catch (saveErr) {
+            console.error(
+              `Error saving ${file.name} (${file.id}) to MongoDB:`,
+              saveErr.message
+            );
+          }
         }
       });
 
@@ -217,9 +226,6 @@ app.get("/fetch-images", async (req, res) => {
   }
 });
 
-// app.listen(PORT, () => {
-//   console.log(`listening on port ${PORT}`);
-// });
 mongoose.connect(DATABASE_URL).then(() => {
   app.listen(PORT, () => {
     console.log("listening on port", PORT);
