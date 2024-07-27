@@ -53,8 +53,52 @@ const auth = new google.auth.GoogleAuth({
 //     return res.status(500).json({ error: err.message });
 //   }
 // });
+// app.get("/fetch-images", async (req, res) => {
+//   const folderId = req.query.folderId; // Get folderId from query parameter
+
+//   if (!folderId) {
+//     return res
+//       .status(400)
+//       .json({ message: "folderId query parameter is required" });
+//   }
+
+//   try {
+//     const drive = google.drive({ version: "v3", auth });
+
+//     const response = await drive.files.list({
+//       q: `'${folderId}' in parents and (mimeType contains 'image/')`,
+//       fields: "nextPageToken, files(id, name)",
+//     });
+
+//     const files = response.data.files;
+//     if (files.length) {
+//       console.log("Images:");
+//       files.forEach((file) => {
+//         console.log(`${file.name} (${file.id})`);
+//       });
+//       return res.json({
+//         files: files.map((file) => ({
+//           id: file.id,
+//           name: file.name,
+//         })),
+//       });
+//     } else {
+//       console.log("No images found.");
+//       return res.status(404).json({ message: "No images found" });
+//     }
+//   } catch (err) {
+//     console.error("The API returned an error:", err.message);
+//     return res.status(500).json({ error: err.message });
+//   }
+// });
+
+// app.listen(PORT, () => {
+//   console.log(`listening on port ${PORT}`);
+// });
 app.get("/fetch-images", async (req, res) => {
   const folderId = req.query.folderId; // Get folderId from query parameter
+  const pageSize = parseInt(req.query.pageSize) || 5; // Number of items per page (default to 10)
+  const pageToken = req.query.pageToken || null; // Token for the next page
 
   if (!folderId) {
     return res
@@ -65,22 +109,38 @@ app.get("/fetch-images", async (req, res) => {
   try {
     const drive = google.drive({ version: "v3", auth });
 
+    // Fetch total file count
+    const totalCountResponse = await drive.files.list({
+      q: `'${folderId}' in parents and (mimeType contains 'image/')`,
+      fields: "files(id)",
+      pageSize: 1000, // Max page size to get all file IDs
+    });
+
+    const totalFileCount = totalCountResponse.data.files.length;
+
+    // Fetch paginated files
     const response = await drive.files.list({
       q: `'${folderId}' in parents and (mimeType contains 'image/')`,
       fields: "nextPageToken, files(id, name)",
+      pageSize: pageSize,
+      pageToken: pageToken,
     });
 
     const files = response.data.files;
+    const nextPageToken = response.data.nextPageToken;
+
     if (files.length) {
       console.log("Images:");
       files.forEach((file) => {
         console.log(`${file.name} (${file.id})`);
       });
       return res.json({
+        totalFileCount: totalFileCount,
         files: files.map((file) => ({
           id: file.id,
           name: file.name,
         })),
+        nextPageToken: nextPageToken || null,
       });
     } else {
       console.log("No images found.");
