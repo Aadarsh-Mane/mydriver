@@ -331,6 +331,8 @@ app.get("/sync-and-fetch-images", async (req, res) => {
 });
 app.get("/getImages", async (req, res) => {
   const folderId = req.query.folderId;
+  const page = parseInt(req.query.page) || 1; // Default to page 1
+  const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
 
   if (!folderId) {
     return res
@@ -350,16 +352,22 @@ app.get("/getImages", async (req, res) => {
       .json(syncAndFetchImagesData);
   }
 
-  // Fetch all images from the database for the given folder ID
-  const allImages = await Image.find({ folderId });
+  // Fetch paginated images from the database for the given folder ID
+  const skip = (page - 1) * limit;
+  const totalImages = await Image.countDocuments({ folderId });
+  const allImages = await Image.find({ folderId }).skip(skip).limit(limit);
 
   return res.json({
     files: allImages.map((file) => ({
       id: file.id,
       name: file.name,
     })),
+    totalImages,
+    totalPages: Math.ceil(totalImages / limit),
+    currentPage: page,
   });
 });
+
 mongoose.connect(DATABASE_URL).then(() => {
   app.listen(PORT, () => {
     console.log("listening on port", PORT);
