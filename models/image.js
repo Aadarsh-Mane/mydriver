@@ -17,4 +17,5 @@ const imageSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+imageSchema.index({ folderId: 1, id: 1 });
 export default mongoose.model("Image", imageSchema);
