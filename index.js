@@ -367,7 +367,9 @@ app.get("/getImages", async (req, res) => {
     currentPage: page,
   });
 });
-
+app.get("/", (req, res) => {
+  res.send("welcome to mydriver api, World!");
+});
 mongoose.connect(DATABASE_URL).then(() => {
   app.listen(PORT, () => {
     console.log("listening on port", PORT);
