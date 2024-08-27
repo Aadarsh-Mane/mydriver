@@ -342,7 +342,7 @@ app.get("/getImages", async (req, res) => {
 
   // Call sync-and-fetch-images route
   const syncAndFetchImagesResponse = await fetch(
-    `https://mydriver.vercel.app/sync-and-fetch-images?folderId=${folderId}`
+    `https://mydriver.onrender.com/sync-and-fetch-images?folderId=${folderId}`
   );
   const syncAndFetchImagesData = await syncAndFetchImagesResponse.json();
 
